@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Jantonapp</title>
+<style>
+  :root{
+    --bg:#f7fbff;
+    --card:#ffffff;
+    --ink:#18314f;
+    --muted:#5f7387;
+    --line:#d9e6f2;
+    --good:#1f8f55;
+    --bad:#c0392b;
+    --accent:#2f80ed;
+    --gold:#f5b700;
+    --shadow:0 10px 24px rgba(24,49,79,.08);
+    --radius:20px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:linear-gradient(180deg,#f9fcff 0%,#eef6ff 100%);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  body{min-height:100vh}
+  .app{max-width:980px;margin:0 auto;padding:16px 16px 36px}
+  .top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+  .brand{font-size:clamp(1.4rem,3.3vw,2rem);font-weight:800;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:.98rem}
+  .stats{display:flex;gap:10px;flex-wrap:wrap}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:10px 14px;box-shadow:var(--shadow);font-weight:700}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin:14px 0}
+  .hero{padding:22px}
+  .hero h1{font-size:clamp(1.5rem,4.2vw,2.3rem);margin:0 0 8px}
+  .hero p{margin:8px 0;line-height:1.45}
+  .primary,.secondary,.answerBtn,.tinyBtn,.gameBtn,.levelBtn{
+    border:none;border-radius:16px;padding:14px 16px;font-size:1rem;font-weight:800;cursor:pointer;
+    transition:transform .08s ease, opacity .15s ease, box-shadow .15s ease;
+  }
+  button:active{transform:scale(.98)}
+  .primary{background:var(--accent);color:#fff;box-shadow:0 8px 20px rgba(47,128,237,.25)}
+  .secondary{background:#edf5ff;color:var(--ink);border:1px solid var(--line)}
+  .tinyBtn{background:#fff;border:1px solid var(--line);padding:10px 12px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .progressWrap{margin-top:8px}
+  .progressBar{height:16px;background:#e7eef7;border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+  .progressFill{height:100%;width:0%;background:linear-gradient(90deg,#77b4ff,#2f80ed);transition:width .25s ease}
+  .levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .levelBtn{background:#fff;border:1px solid var(--line);text-align:left;min-height:108px;display:flex;flex-direction:column;gap:8px;justify-content:space-between;box-shadow:var(--shadow)}
+  .levelBtn.locked{opacity:.55}
+  .levelTitle{font-size:1.08rem}
+  .levelMeta{color:var(--muted);font-size:.92rem}
+  .screen{display:none}
+  .screen.active{display:block}
+  .taskHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+  .taskTitle{font-size:1.2rem;font-weight:800}
+  .sentence{font-size:clamp(1.55rem,4.4vw,2.3rem);font-weight:800;line-height:1.25;background:#f8fbff;border:1px solid var(--line);padding:18px;border-radius:18px;margin:12px 0}
+  .hint{font-size:1rem;color:var(--muted)}
+  .question{font-size:1.1rem;font-weight:700;margin:14px 0 10px}
+  .answers{display:grid;grid-template-columns:1fr;gap:10px}
+  .answerBtn{background:#fff;border:2px solid #dbe7f3;color:var(--ink);text-align:left;padding:16px}
+  .answerBtn.correct{border-color:#9ad0b3;background:#eefaf3}
+  .answerBtn.wrong{border-color:#f0b0a9;background:#fff1f0}
+  .feedback{min-height:28px;font-size:1.02rem;font-weight:800;margin-top:10px}
+  .feedback.good{color:var(--good)}
+  .feedback.bad{color:var(--bad)}
+  .games{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .gameBtn{background:#fff7e0;border:1px solid #f1dea2;color:#6d5200;text-align:left;min-height:124px}
+  .gameBtn span{display:block;font-size:.92rem;font-weight:600;color:#7a6a34;margin-top:6px;line-height:1.35}
+  .note{color:var(--muted);font-size:.93rem;line-height:1.4}
+  .celebrate{font-size:1.22rem;font-weight:900}
+  .footer{color:var(--muted);font-size:.9rem;margin-top:18px;line-height:1.45}
+  .starline{font-size:1.05rem;font-weight:900;color:#8b6b00}
+  .tag{display:inline-block;padding:6px 10px;border-radius:999px;background:#f3f8ff;border:1px solid var(--line);font-size:.9rem;font-weight:700;margin-right:6px;margin-top:6px}
+  @media (min-width:780px){
+    .answers{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div>
+      <div class="brand">Jantonapp</div>
+      <div class="sub">Lesen üben, Sterne sammeln, Spielpause freischalten</div>
+    </div>
+    <div class="stats">
+      <div class="pill">⭐ <span id="starCount">0</span> Sterne</div>
+      <div class="pill">🏁 <span id="levelCount">1</span>/<span id="levelTotal">6</span> Level frei</div>
+    </div>
+  </div>
+
+  <section id="homeScreen" class="screen active">
+    <div class="card hero">
+      <h1>Willkommen in der Jantonapp</h1>
+      <p>Hier liest du Sätze in mehreren Schwierigkeitsstufen. Nach erfolgreichen Aufgaben bekommst du Sterne. Nach jedem geschafften Level wird eine kleine <strong>Spielpause</strong> freigeschaltet.</p>
+      <p class="note">Tipp für das iPad: Diese Datei in <strong>Safari</strong> öffnen. Der Vorlese-Knopf nutzt die eingebaute Sprachausgabe des Browsers.</p>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="startBtn">Jetzt starten</button>
+        <button class="secondary" id="resetBtn">Fortschritt zurücksetzen</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="taskHeader">
+        <div class="taskTitle">Dein Lernfortschritt</div>
+        <div class="starline" id="progressText">0 von 6 Leveln geschafft</div>
+      </div>
+      <div class="progressWrap">
+        <div class="progressBar"><div class="progressFill" id="overallProgress"></div></div>
+      </div>
+      <div style="margin-top:10px" id="badgeZone"></div>
+    </div>
+
+    <div class="card">
+      <div class="taskTitle" style="margin-bottom:12px">Level auswählen</div>
+      <div class="levels" id="levelGrid"></div>
+    </div>
+  </section>
+
+  <section id="taskScreen" class="screen">
+    <div class="card">
+      <div class="taskHeader">
+        <div>
+          <div class="taskTitle" id="taskLevelTitle">Level</div>
+          <div class="hint" id="taskMeta"></div>
+        </div>
+        <div class="row">
+          <button class="tinyBtn" id="backHomeBtn">🏠 Start</button>
+          <button class="tinyBtn" id="speakBtn">🔊 Vorlesen</button>
+        </div>
+      </div>
+      <div class="sentence" id="sentenceBox"></div>
+      <div class="question" id="questionBox"></div>
+      <div class="answers" id="answersBox"></div>
+      <div class="feedback" id="feedbackBox"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="primary" id="nextTaskBtn" style="display:none">Weiter</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="gamesScreen" class="screen">
+    <div class="card">
+      <div class="celebrate" id="gameHeadline">Super! Level geschafft!</div>
+      <p>Du hast eine Spielpause freigeschaltet. Wähle ein harmloses, lustiges Spielangebot aus. Es öffnet sich in einem neuen Tab.</p>
+      <div class="games" id="gamesGrid"></div>
+      <p class="note" style="margin-top:12px">Für die Spielpause braucht das iPad Internet. Danach kannst du zur Jantonapp zurückkehren und das nächste Level öffnen.</p>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="continueBtn">Nächstes Level</button>
+        <button class="secondary" id="homeBtn2">Zur Startseite</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">Jantonapp ist als eine einzige HTML-Datei gebaut, damit sie auf dem iPad möglichst einfach in Safari läuft.</div>
+</div>
+
+<script>
+const levels = [
+  {
+    id: 1,
+    title: 'Level 1 · B und einfache Sätze',
+    meta: 'Leicht',
+    source: 'B/b',
+    tasks: [
+      { sentence: 'Emil mag Brezeln.', question: 'Wer mag Brezeln?', answers: ['Franz', 'Emil', 'Lara'], correct: 1 },
+      { sentence: 'Franz malt einen Bagger.', question: 'Was malt Franz?', answers: ['einen Bus', 'einen Bagger', 'ein Zebra'], correct: 1 },
+      { sentence: 'Lara zeltet im Bett.', question: 'Wo zeltet Lara?', answers: ['im Zoo', 'im Bett', 'im Bus'], correct: 1 },
+      { sentence: 'Das Zebra ist im Zoo.', question: 'Wo ist das Zebra?', answers: ['im Zoo', 'im Bett', 'im Haus'], correct: 0 }
+    ]
+  },
+  {
+    id: 2,
+    title: 'Level 2 · sch-Sätze',
+    meta: 'Leicht bis mittel',
+    source: 'sch',
+    tasks: [
+      { sentence: 'Das Schiff ist schnell.', question: 'Was ist schnell?', answers: ['das Schiff', 'die Schule', 'der Fisch'], correct: 0 },
+      { sentence: 'Der Fisch ist frisch.', question: 'Wie ist der Fisch?', answers: ['frisch', 'rot', 'müde'], correct: 0 },
+      { sentence: 'Die Schere ist scharf.', question: 'Was ist scharf?', answers: ['die Schere', 'das Schaf', 'die Tasche'], correct: 0 },
+      { sentence: 'Das Schaf schläft.', question: 'Wer schläft?', answers: ['das Schiff', 'das Schaf', 'der Fischer'], correct: 1 }
+    ]
+  },
+  {
+    id: 3,
+    title: 'Level 3 · K-Sätze',
+    meta: 'Mittel',
+    source: 'K/k',
+    tasks: [
+      { sentence: 'Der Kaktus ist klein.', question: 'Was ist klein?', answers: ['der Koala', 'der Koffer', 'der Kaktus'], correct: 2 },
+      { sentence: 'Die Kiste ist voll.', question: 'Wie ist die Kiste?', answers: ['voll', 'leer', 'kalt'], correct: 0 },
+      { sentence: 'Das Kamel ist groß.', question: 'Was ist groß?', answers: ['das Kamel', 'die Kerze', 'die Karte'], correct: 0 },
+      { sentence: 'Karola bekommt einen Koffer.', question: 'Was bekommt Karola?', answers: ['einen Koffer', 'einen Kaktus', 'einen Koala'], correct: 0 }
+    ]
+  },
+  {
+    id: 4,
+    title: 'Level 4 · D-Sätze',
+    meta: 'Mittel',
+    source: 'D/d',
+    tasks: [
+      { sentence: 'Der Dino ist da.', question: 'Wer ist da?', answers: ['der Dino', 'die Dose', 'die Nadel'], correct: 0 },
+      { sentence: 'Die Dose ist rot.', question: 'Welche Farbe hat die Dose?', answers: ['blau', 'rot', 'gelb'], correct: 1 },
+      { sentence: 'Der Hund badet.', question: 'Wer badet?', answers: ['der Dino', 'der Hund', 'der Mann'], correct: 1 },
+      { sentence: 'Die Nadel ist dünn.', question: 'Wie ist die Nadel?', answers: ['dünn', 'laut', 'langsam'], correct: 0 }
+    ]
+  },
+  {
+    id: 5,
+    title: 'Level 5 · Ei-Sätze',
+    meta: 'Mittel bis schwer',
+    source: 'Ei/ei',
+    tasks: [
+      { sentence: 'Das Eis ist kalt.', question: 'Wie ist das Eis?', answers: ['kalt', 'laut', 'braun'], correct: 0 },
+      { sentence: 'Die Leiter ist hoch.', question: 'Was ist hoch?', answers: ['die Ameise', 'die Leiter', 'die Marmelade'], correct: 1 },
+      { sentence: 'Emma mag Marmelade.', question: 'Wer mag Marmelade?', answers: ['Emma', 'der Papagei', 'die Eule'], correct: 0 },
+      { sentence: 'Der Papagei ist rot und gelb.', question: 'Welche Farben hat der Papagei?', answers: ['rot und gelb', 'blau und grün', 'weiß und grau'], correct: 0 }
+    ]
+  },
+  {
+    id: 6,
+    title: 'Level 6 · Au und Eu',
+    meta: 'Schwerer',
+    source: 'Au/Eu',
+    tasks: [
+      { sentence: 'Das blaue Auto ist neu.', question: 'Wie ist das Auto?', answers: ['alt', 'neu', 'kaputt'], correct: 1 },
+      { sentence: 'Drei kleine Eulen heulen.', question: 'Wer heult?', answers: ['drei kleine Eulen', 'zwei Mäuse', 'ein Koala'], correct: 0 },
+      { sentence: 'Mama Maus schaut aus dem Haus.', question: 'Wer schaut?', answers: ['Mama Maus', 'der Hund', 'die Eule'], correct: 0 },
+      { sentence: 'Die Maus ist braun.', question: 'Welche Farbe hat die Maus?', answers: ['rot', 'braun', 'blau'], correct: 1 }
+    ]
+  }
+];
+
+const gameLinks = [
+  {
+    title: 'PBS KIDS Games',
+    subtitle: 'Viele freundliche, kindgerechte Minispiele',
+    url: 'https://pbskids.org/games'
+  },
+  {
+    title: 'Sesame Street Games',
+    subtitle: 'Lustige Spiele mit Elmo, Abby und Co.',
+    url: 'https://www.sesamestreet.org/games'
+  },
+  {
+    title: 'Nat Geo Kids – Puzzles & Quiz',
+    subtitle: 'Tier- und Wissensspiele zum Anklicken',
+    url: 'https://kids.nationalgeographic.com/games'
+  }
+];
+
+const stateKey = 'jantonapp_v2_state';
+let state = loadState();
+let currentLevelIndex = 0;
+let currentTaskIndex = 0;
+let answered = false;
+let justCompletedLevel = null;
+
+const homeScreen = document.getElementById('homeScreen');
+const taskScreen = document.getElementById('taskScreen');
+const gamesScreen = document.getElementById('gamesScreen');
+const levelGrid = document.getElementById('levelGrid');
+const sentenceBox = document.getElementById('sentenceBox');
+const questionBox = document.getElementById('questionBox');
+const answersBox = document.getElementById('answersBox');
+const feedbackBox = document.getElementById('feedbackBox');
+const nextTaskBtn = document.getElementById('nextTaskBtn');
+const taskLevelTitle = document.getElementById('taskLevelTitle');
+const taskMeta = document.getElementById('taskMeta');
+const starCount = document.getElementById('starCount');
+const levelCount = document.getElementById('levelCount');
+const levelTotal = document.getElementById('levelTotal');
+const overallProgress = document.getElementById('overallProgress');
+const progressText = document.getElementById('progressText');
+const badgeZone = document.getElementById('badgeZone');
+const gamesGrid = document.getElementById('gamesGrid');
+const gameHeadline = document.getElementById('gameHeadline');
+
+levelTotal.textContent = levels.length;
+document.getElementById('startBtn').addEventListener('click', () => {
+  const firstOpen = Math.min(state.unlockedLevel - 1, levels.length - 1);
+  openLevel(firstOpen);
+});
+document.getElementById('resetBtn').addEventListener('click', resetProgress);
+document.getElementById('backHomeBtn').addEventListener('click', showHome);
+document.getElementById('homeBtn2').addEventListener('click', showHome);
+document.getElementById('continueBtn').addEventListener('click', continueAfterGames);
+document.getElementById('speakBtn').addEventListener('click', speakCurrentSentence);
+nextTaskBtn.addEventListener('click', nextStep);
+
+function defaultState(){
+  return {
+    stars: 0,
+    unlockedLevel: 1,
+    completedLevels: [],
+    perLevelBest: {}
+  };
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(stateKey);
+    if(!raw) return defaultState();
+    return Object.assign(defaultState(), JSON.parse(raw));
+  }catch(e){
+    return defaultState();
+  }
+}
+
+function saveState(){
+  localStorage.setItem(stateKey, JSON.stringify(state));
+}
+
+function resetProgress(){
+  if(confirm('Möchtest du den ganzen Fortschritt löschen?')){
+    state = defaultState();
+    saveState();
+    renderHome();
+    showHome();
+  }
+}
+
+function setScreen(name){
+  homeScreen.classList.remove('active');
+  taskScreen.classList.remove('active');
+  gamesScreen.classList.remove('active');
+  if(name==='home') homeScreen.classList.add('active');
+  if(name==='task') taskScreen.classList.add('active');
+  if(name==='games') gamesScreen.classList.add('active');
+}
+
+function renderHome(){
+  starCount.textContent = state.stars;
+  levelCount.textContent = state.unlockedLevel;
+  const done = state.completedLevels.length;
+  progressText.textContent = `${done} von ${levels.length} Leveln geschafft`;
+  overallProgress.style.width = `${(done / levels.length) * 100}%`;
+  badgeZone.innerHTML = '';
+  const labels = [
+    done >= 1 ? '🌟 Erster Stern' : null,
+    done >= 3 ? '📚 Leseprofi' : null,
+    done >= 6 ? '🏆 Alles geschafft' : null
+  ].filter(Boolean);
+  if(labels.length===0){
+    badgeZone.innerHTML = '<span class="tag">Los geht\'s!</span>';
+  } else {
+    labels.forEach(t=>{
+      const span = document.createElement('span');
+      span.className='tag';
+      span.textContent=t;
+      badgeZone.appendChild(span);
+    });
+  }
+
+  levelGrid.innerHTML = '';
+  levels.forEach((level, idx) => {
+    const unlocked = idx < state.unlockedLevel;
+    const btn = document.createElement('button');
+    btn.className = 'levelBtn' + (unlocked ? '' : ' locked');
+    btn.disabled = !unlocked;
+    btn.innerHTML = `
+      <div>
+        <div class="levelTitle">${level.title}</div>
+        <div class="levelMeta">${level.meta}</div>
+      </div>
+      <div>${state.completedLevels.includes(level.id) ? '✅ geschafft' : unlocked ? '▶ öffnen' : '🔒 gesperrt'}</div>
+    `;
+    btn.addEventListener('click', () => openLevel(idx));
+    levelGrid.appendChild(btn);
+  });
+}
+
+function openLevel(levelIdx){
+  currentLevelIndex = levelIdx;
+  currentTaskIndex = 0;
+  answered = false;
+  renderTask();
+  setScreen('task');
+}
+
+function renderTask(){
+  const level = levels[currentLevelIndex];
+  const task = level.tasks[currentTaskIndex];
+  taskLevelTitle.textContent = `${level.title}`;
+  taskMeta.textContent = `Aufgabe ${currentTaskIndex + 1} von ${level.tasks.length}`;
+  sentenceBox.textContent = task.sentence;
+  questionBox.textContent = task.question;
+  feedbackBox.textContent = '';
+  feedbackBox.className = 'feedback';
+  nextTaskBtn.style.display = 'none';
+  answered = false;
+  answersBox.innerHTML = '';
+  task.answers.forEach((text, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'answerBtn';
+    btn.textContent = text;
+    btn.addEventListener('click', () => chooseAnswer(idx, btn));
+    answersBox.appendChild(btn);
+  });
+}
+
+function chooseAnswer(idx, btn){
+  if(answered) return;
+  answered = true;
+  const level = levels[currentLevelIndex];
+  const task = level.tasks[currentTaskIndex];
+  const buttons = [...document.querySelectorAll('.answerBtn')];
+  buttons.forEach((b,i) => {
+    b.disabled = true;
+    if(i === task.correct) b.classList.add('correct');
+  });
+  if(idx === task.correct){
+    btn.classList.add('correct');
+    feedbackBox.textContent = 'Richtig! Sehr gut gelesen. ⭐';
+    feedbackBox.classList.add('good');
+    state.stars += 1;
+    saveState();
+    renderHome();
+  } else {
+    btn.classList.add('wrong');
+    feedbackBox.textContent = 'Fast. Schau noch einmal genau hin.';
+    feedbackBox.classList.add('bad');
+  }
+  nextTaskBtn.style.display = 'inline-block';
+}
+
+function nextStep(){
+  const level = levels[currentLevelIndex];
+  if(currentTaskIndex < level.tasks.length - 1){
+    currentTaskIndex += 1;
+    renderTask();
+  } else {
+    finishLevel();
+  }
+}
+
+function finishLevel(){
+  const levelId = levels[currentLevelIndex].id;
+  if(!state.completedLevels.includes(levelId)) state.completedLevels.push(levelId);
+  if(state.unlockedLevel < levels.length) state.unlockedLevel = Math.max(state.unlockedLevel, currentLevelIndex + 2);
+  saveState();
+  renderHome();
+  justCompletedLevel = currentLevelIndex;
+  renderGames();
+  setScreen('games');
+}
+
+function renderGames(){
+  const level = levels[justCompletedLevel];
+  gameHeadline.textContent = `Super! ${level.title} geschafft!`;
+  gamesGrid.innerHTML = '';
+  gameLinks.forEach(g => {
+    const a = document.createElement('button');
+    a.className = 'gameBtn';
+    a.innerHTML = `${g.title}<span>${g.subtitle}</span>`;
+    a.addEventListener('click', () => window.open(g.url, '_blank', 'noopener'));
+    gamesGrid.appendChild(a);
+  });
+}
+
+function continueAfterGames(){
+  const next = Math.min((justCompletedLevel ?? 0) + 1, levels.length - 1);
+  if((justCompletedLevel ?? 0) >= levels.length - 1){
+    showHome();
+  } else {
+    openLevel(next);
+  }
+}
+
+function showHome(){
+  renderHome();
+  setScreen('home');
+}
+
+function speakCurrentSentence(){
+  const text = sentenceBox.textContent || 'Hallo';
+  if(!('speechSynthesis' in window)){
+    alert('Auf diesem Gerät ist die Vorlesefunktion leider nicht verfügbar.');
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'de-DE';
+  utter.rate = 0.85;
+  window.speechSynthesis.speak(utter);
+}
+
+renderHome();
+showHome();
+</script>
+</body>
+</html>
